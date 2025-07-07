@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Buscador Cotodigital - Control Stock</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f8f8f8;
+    }
+    h1 {
+      color: #444;
+    }
+    input, button {
+      padding: 10px;
+      font-size: 16px;
+    }
+    #resultado {
+      margin-top: 20px;
+      background: #fff;
+      padding: 15px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .producto {
+      margin-bottom: 15px;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Buscador de Productos - Cotodigital</h1>
+
+  <input type="text" id="busquedaInput" placeholder="PLU, EAN o Nombre del producto" />
+  <button onclick="buscar()">Buscar</button>
+
+  <div id="resultado"></div>
+
+  <script>
+    async function buscar() {
+      const query = document.getElementById("busquedaInput").value.trim();
+      const resultadoDiv = document.getElementById("resultado");
+      resultadoDiv.innerHTML = "Buscando...";
+
+      if (!query) {
+        resultadoDiv.innerHTML = "⚠️ Ingresá un nombre, PLU o EAN para buscar.";
+        return;
+      }
+
+      const proxy = "https://cors-anywhere.herokuapp.com/";
+      const urlBase = "https://www.cotodigital.com.ar/api/v3/buscador";
+      const url = `${proxy}${urlBase}?keyword=${encodeURIComponent(query)}&limit=10`;
+
+      try {
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Origin': 'https://www.cotodigital.com.ar' // ayuda a evitar errores de origen
+          }
+        });
+
+        if (!res.ok) throw new Error("Error en la consulta");
+
+        const data = await res.json();
+        const productos = data?.contenido?.productos || [];
+
+        if (productos.length === 0) {
+          resultadoDiv.innerHTML = "❌ No se encontraron productos.";
+          return;
+        }
+
+        resultadoDiv.innerHTML = "";
+        productos.forEach(prod => {
+          const html = `
+            <div class="producto">
+              <strong>Nombre:</strong> ${prod.descripcion}<br>
+              <strong>PLU:</strong> ${prod.codigoArticulo}<br>
+              <strong>EAN:</strong> ${prod.codigoEan || 'No disponible'}<br>
+              <strong>Precio:</strong> $${prod.precioLista}<br>
+            </div>
+          `;
+          resultadoDiv.innerHTML += html;
+        });
+
+      } catch (error) {
+        resultadoDiv.innerHTML = "🚫 Error al buscar productos.";
+        console.error(error);
+      }
+    }
+  </script>
+
+</body>
+</html>
